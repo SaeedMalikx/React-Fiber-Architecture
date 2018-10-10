@@ -16,7 +16,6 @@ Here is the link for the official codebase [REACT](https://github.com/facebook/r
 
 ### Files So Far
 
-**(only important/big ones are listed here, checked are the ones explained so far)**
 
 - [x] ReactFiber.js > Defining Functions For Creating Fibers
 - [x] ReactCurrentFiber.js > Functions for Describing Fibers
@@ -28,8 +27,10 @@ Here is the link for the official codebase [REACT](https://github.com/facebook/r
 - [ ] ReactFiberHydrationContext.js > Must Understand the Fast and Furious DOM
 - [ ] ReactFiberPendingPriority.js > Priority, marks levels for various stuff
 - [x] ReactFiberRoot.js > For creating Fiber Roots
-- [ ] ReactProfilerTimer.js > For Recording/Tracking Time(expiration, commits)
+- [x] ReactFiberExpirationTime.js > How expiration timer is handled
+- [ ] ReactProfilerTimer.js > For Recording/Tracking Time(expiration, commits) for React Profile
 - [ ] ReactFiberTreeReflection.js > Finding Where the host fibers are...nature 
+- [x] ReactFiberStack.js > Concerns how the "stack" is shifted
 - [ ] ReactFiberScheduler > THIS IS SOME GUCCI CODE
 - [ ] ReactUpdateQueue.js > Scheduling The Updates(or I think so)
 - [ ] ReactFiberBeginWork.js > This is for begining the work
@@ -38,6 +39,7 @@ Here is the link for the official codebase [REACT](https://github.com/facebook/r
 - [ ] ReactUnwindWork.js > Gotta unwind the work once its completed
 - [ ] ReactFiberReconciler.js >  The Main File
 - [ ] REACT-DOM.JS > Where the above files end making sense
+- [ ] Scheduler.js > located in a different package > concerns RequestAnimationFrame
 
 ## What Is A Fiber and How Are They Created?
 
@@ -199,6 +201,8 @@ Function **assignFiberPropertiesInDev** : Used for stashing WIP properties to re
 
 ### What Are Root Fibers?
 
+**ReactFiberRoot.js**
+
 The Host Fiber and it has the following properties and is created by **createFiberRoot**
 
 ```
@@ -239,6 +243,8 @@ firstBatch:
 
 ### Expiration Time
 
+**ReactFiberExpirationTime.js**
+
 Contains functions concerning  ExpirationTime and when low priority and high priority Batches. High priority Batches have a longer expiration time than low priority while in DEV mode.
 
 ```
@@ -264,7 +270,7 @@ High Priority Uses the Function **computeInteractiveExpiration** with the curren
 
 ### Methods For Detecting Fiber In A Stack
 
-ReactCurrentFiber.js
+**ReactCurrentFiber.js**
 
 NOTE: Recheck when this is used
 
@@ -300,7 +306,33 @@ Maybe add DEV stuff if they are needed
 ------------
 
 
+### How The Stack Works
 
+**ReactFiberStack.js**
+
+NOTE: Updates are not sorted by priority, but by insertion; new updates are always appended to the end of the list.
+
+The stack itself seems to be a push pop based on the index(initial value of -1), either increment the index when pushing or decrement when popping.
+```
+const valueStack []
+let fiberStack [] | null
+
+let index = -1
+
+createCursor for assigning where to start looking in the stack
+
+pop(cursor, fiber) 
+ if index < 0 return ''
+ current cursor = valueStack[index]
+ assign null to valueStack since it's removed from stack
+ index--
+
+push(cursor, value, fiber)
+  index++
+  valueStack[index] is the current cursor
+  current cursors is assigned the new value
+
+```
 
 
 
@@ -311,11 +343,20 @@ Maybe add DEV stuff if they are needed
 ### Fiber Files that are exported to the React-DOM.js (client side)
 
 -All are imported via inline.dom file * as DOMRenderer
+
 -2 Types(flow)(FiberRoot, Batch) from ReactFiberRoot
--React Dom itself is exported from ReactDOMFB.js where the ReactFiberTreeReflection 
+
+-React Dom itself is exported from ReactDOMFB.js 
+
+-The rest of DOM files are just various HTML VDOM
 
 ----------------
 
+**Scheduler.js**
+
+Holy crap it's using requestAnimationFrame
+
+----------------
 ## REACT-DOM AND HOW IT WORKS
 
 Rough Understanding of how this all works based on Baking Fiber COOKIES
