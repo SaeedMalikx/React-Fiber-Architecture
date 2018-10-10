@@ -37,7 +37,7 @@ Here is the link for the official codebase [REACT](https://github.com/facebook/r
 - [ ] ReactCompleteWork.js > CompleteWork
 - [ ] ReactUnwindWork.js > Gotta unwind the work once its completed
 - [ ] ReactFiberReconciler.js >  The Main File
-
+- [ ] REACT-DOM.JS > Where the above files end making sense
 
 ## What Is A Fiber and How Are They Created?
 
@@ -313,3 +313,25 @@ Maybe add DEV stuff if they are needed
 -All are imported via inline.dom file * as DOMRenderer
 -2 Types(flow)(FiberRoot, Batch) from ReactFiberRoot
 -React Dom itself is exported from ReactDOMFB.js where the ReactFiberTreeReflection 
+
+----------------
+
+## REACT-DOM AND HOW IT WORKS
+
+Rough Understanding of how this all works based on Baking Fiber COOKIES
+
+Straight up preparing a batch of chocolate chip cookies and peanut butter chip cookies. 
+
+Putting it in the oven 
+
+Modifying the chocolate chips cause setState has decided the chips are not good enough but it also doesn't like the peanut butter cookies. 
+
+Ok lets update the chocolate chips cause everyone will see them first cause chocolate chips cookies are high priority and since we put the peanut butter cookies all the way in the back since they suck at Dota and always stuck in low priority, we can change the peanut butter chips right before everyone notices them. 
+
+Commit the chips change and
+
+turns out we used the wrong tray(class components) so now somehow the cookies are floating in magic air and tray needs to be changed.
+
+TING............Delicious Cookies
+
+
