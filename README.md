@@ -19,7 +19,7 @@ Here is the link for the official codebase [REACT](https://github.com/facebook/r
 **(only important/big ones are listed here, checked are the ones explained so far)**
 
 - [x] ReactFiber.js > Defining Functions For Creating Fibers
-- [ ] ReactCurrentFiber.js > ....
+- [x] ReactCurrentFiber.js > Functions for Describing Fibers
 - [ ] ReactDebugFiberPerf > probably for debugging DEV
 - [ ] ReactChildFiber > The Bulk of The Child Reconciliation
 - [ ] ReactClassComponent.js > Class mounting, class instances....
@@ -27,7 +27,7 @@ Here is the link for the official codebase [REACT](https://github.com/facebook/r
 - [ ] ReactFiberHostContext > Host Stuff
 - [ ] ReactFiberHydrationContext.js > Must Understand the Fast and Furious DOM
 - [ ] ReactFiberPendingPriority.js > Priority, marks levels for various stuff
-- [ ] ReactFiberRoot.js > For creating Fiber Roots
+- [x] ReactFiberRoot.js > For creating Fiber Roots
 - [ ] ReactProfilerTimer.js > For Recording/Tracking Time(expiration, commits)
 - [ ] ReactFiberTreeReflection.js > Finding Where the host fibers are...nature 
 - [ ] ReactFiberScheduler > THIS IS SOME GUCCI CODE
@@ -190,9 +190,122 @@ createFiberFromProfiler
 createFiberFromText
 createFiberFromHostInstanceForDeletion
 createFiberFromPortal
+createHostRootFiber 
 ```
 
 Function **assignFiberPropertiesInDev** : Used for stashing WIP properties to replay failed work in DEV.
+
+----------------
+
+### What Are Root Fibers?
+
+The Host Fiber and it has the following properties and is created by **createFiberRoot**
+
+```
+current: The currently active root fiber. This is the mutable root of the tree.
+
+containerInfo: Any additional information from the host associated with this root.
+
+pendingChildren:
+
+earliestSuspendedTime: earliest priority levels that are suspended from committing.
+latestSuspendedTime: latest priority levels that are suspended from committing.
+
+earliestPendingTime: earliest priority levels that are not known to be suspended.
+latestPendingTime: latest priority levels that are not known to be suspended.
+
+latestPingedTime: The latest priority level that was pinged by a resolved promise and can be retried.
+
+didError: if error thrown
+pendingCommitExpirationTime:
+
+finishedWork: A finished work-in-progress HostRoot that's ready to be committed.
+
+timeoutHandle: Timeout handle returned by setTimeout. Used to cancel a pending timeout
+
+context: Top context object, used by renderSubtreeIntoContainer
+pendingContext:
+
++hydrate: Determines if we should attempt to hydrate on the initial mount
+
+nextExpirationTimeToWorkOn: Remaining expiration time on this root.
+
+expirationTime:
+
+firstBatch:
+```
+
+----------------
+
+### Expiration Time
+
+Contains functions concerning  ExpirationTime and when low priority and high priority Batches. High priority Batches have a longer expiration time than low priority while in DEV mode.
+
+```
+1 unit of expiration time represents 10ms
+
+msToExpirationTime > returns ms/10 + 2
+expirationTimeToMS > return (expirationTime - 2) * 10
+
+```
+
+High and Low Priority Times in ms
+
+```
+LOW_PRIORITY_EXPIRATION = 5000
+LOW_PRIORITY_BATCH_SIZE = 250
+HIGH_PRIORITY_EXPIRATION = __DEV__ ? 500 : 150
+HIGH_PRIORITY_BATCH_SIZE = 100
+```
+
+High Priority Uses the Function **computeInteractiveExpiration** with the currentTime. Low priority uses **computeAsyncExpiration**, likely used for offscreen renders. Both use the function **computeExpirationBucket** (currentTime, expirationInMs, bucketSizeMs).
+
+----------------
+
+### Methods For Detecting Fiber In A Stack
+
+ReactCurrentFiber.js
+
+NOTE: Recheck when this is used
+
+The main function for describing what the fiber type is **describeFiber**
+```
+parameters(Fiber)
+  switch (depending on the tag)
+    IndeterminateComponent
+    FunctionComponent
+    FunctionComponentLazy
+    ClassComponent
+    ClassComponentLazy
+    HostComponent
+    Mode
+      name = getComponentName //Function returning a string based on Types(CAP_NAMES)-paramters is type
+      if
+        ownerName = getComponentName
+      return describeComponentFrame(name, source, ownerName)
+```
+
+So **describeFiber** is used in a exported function **getStackByFiberInDevAndProd**
+
+```
+do 
+  info += describeFiber(node);
+  while workInProgress
+  return info
+```
+2 exports being the current Fiber and LifeCyclePhase
+
+Maybe add DEV stuff if they are needed
+
+------------
+
+
+
+
+
+
+
+
 
 ----------------
 ### Fiber Files that are exported to the React-DOM.js (client side)
