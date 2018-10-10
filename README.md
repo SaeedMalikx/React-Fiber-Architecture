@@ -334,7 +334,134 @@ push(cursor, value, fiber)
 
 ```
 
+----------------
 
+### How The ClassComponent Works(Updated and such)
+
+**ReactFiberClassComponent.js**
+
+this is incharge of handling how the react components are updated:
+
+the outer function incharge of sending props to the internal state is **applyDerivedStateFromProps**. Which handles
+Merging  of the partial state and the previous state. Where memoized state is compared with the previous and using methods like Redux object.assign. 
+It assigns a new state. There is a if case present that if it's not in a updatequeue then basestate(initial state) = memiozed state. 
+
+
+The structure of this is a lot like using Redux(payloads, assigning)
+
+There is a main classComponentUpdater which is contains various functions:
+
+```
+
+isMounted 
+
+enqueueSetState(inst, payload, callback)
+	get various values on current time and expirationtimes for the given Fiber
+	createUpdate
+	enqueueUpdate > takes in Fiber and the update which was just created
+	scheduleWork > schedule it for work (fiber and the expirationTime)
+enqueueReplaceState
+	Same as above function but for replacing state
+enqueueForceUpdate
+	Same as above but for forced updates
+```
+
+Function for checking is the component should update **checkShouldComponentUpdate**
+
+```
+parameters(workInProgress, ctor, oldprops, newProps, oldState, newState, nextContext)
+ const instance is the workinProgress
+	if it's function
+		startPhaseTimer
+		shouldUpdate > also the returned value
+		stopPhaseTimer
+	if it's a pure component
+		return if they !shallowEqual
+```
+function **adoptClassInstance** 
+
+```
+
+// The instance needs access to the fiber so that it can schedule updates
+
+instance.updater = classComponentUpdater
+
+```
+
+The main function for constructing the current class instance **constructClassInstance**
+
+```
+parameters(workInProgress, ctor, props, renderExpirationTime)
+	let isLegacyContextConsumer =  false
+	let unmaskedContext = emptyContextObject
+	let context = null
+	contextType = ctor.contextType
+		if contextType is an object and true
+			context = contextType.unstable_read()
+		else 
+			unmaskedContext = getUnmaskedContext(workInProgress, ctor, true)
+			const contextTypes = ctor.contextTypes
+			set isLegacyContextConsumer to (true?) depending on the contextTypes being present
+			context is getMaskedContext if isLegacyContextConsumer is true
+	
+	const instance = new ctor(props, context)
+	the new state is equal to the memoizedState if the state of the current instance is not null		
+	adoptClassInstance(workInProgress, instance)
+	if isLegacyContextConsumer is true then cacheContext(workInProgress, unmaskedContext, context)
+	
+	return instance
+
+```
+
+Various calls on the Component
+
+```
+
+callComponentWillMount(workInProgress, instance)
+	startPhaseTimer
+	old is instance state
+	depending on the typeof instance call either componentWillMount or UNSAFE_componentWillMount
+	stopPhaseTimer
+	
+	if oldstate !== instance.state 
+
+callComponentWillRecieveProps(workInProgress, instance, newProps, nextContext)
+	startPhaseTimer
+	old is instance state
+	depending on the typeof instance call either componentWillReceiveProps or UNSAFE_componentWillReceiveProps
+	stopPhaseTimer
+	
+	if instance.state !== oldState then enqueueReplaceState(instance, instance.state, null)
+
+```
+
+Once the class instance is constructed then it needs to be mounted with **mountClassInstance**
+
+```
+
+parameters(workInProgress, ctor, newProps, renderExpirationTime)
+	const instance = workInProgress.stateNode;
+  	instance.props = newProps;
+  	instance.state = workInProgress.memoizedState;
+  	instance.refs = emptyRefsObject;
+
+	contextType = ctor.contextType
+	if object and not null then instance.context does a unstable_read()
+	else 
+		const unmaskedContext = getUnmaskedContext(workInProgress, ctor, true);
+    		instance.context = getMaskedContext(workInProgress, unmaskedContext);
+	
+	let updateQueue = workInProgress.updateQueue 
+		if not null then processUpdateQueue
+			and the instance state will equal memoizedState
+	if ctor.getDerivedSTateFromProps is true(function) then applyDerivedStateFromProps
+		and instance state is the memoizedState 
+```
+still need to understand these
+
+**resumeMountClassInstance**
+
+**updateClassInstance**
 
 
 
