@@ -2,15 +2,17 @@
 
 Just another one of my **Self-Study Projects** . I don't tend to make such projects public but this might be of help for someone looking to understand Fiber and React Under the hood. Do remember as of writing this, this is my first time looking at the code for Fiber.
 
-Often times reading a large amount of code can be very intimidating for someone new to programming. So it's best to read each line and document them if needed so you don't go hoping around files searching for that lost variable or get lost on the Import tags. There is no set rules or anything here, just documenting/laying it out the best I can. Any part of this doc might change as my understanding of the whole system grows.  
+Often times reading a large amount of code can be very intimidating for someone new to programming. So it's best to read each line and document them if needed so you don't go hoping around files searching for that lost variable or get lost on the Import tags. There is no set rules or anything here, just documenting/laying it out the best I can. Any part of this doc might change as my understanding of the whole system grows. 
+
+In order to properly use this, clone it and uncheck all the files and then go through the files one by one and adjust the pseudocode to your liking. Remember it took them 2+ years to make Fiber so be patient as it might take you a while. 
 
 **As for obvious errors and such:**
 
 > “There are no mistakes, only happy accidents.” Bob Ross
 
 
-**Lot of this comes directly from Fiber codebase itself, a lot of it will be just code reorganized for easier understanding** 
-**I Turn a lot of functions into Pseudocode for easier reference and understanding**
+
+**Lot of this comes directly from Fiber codebase itself, a lot of it will be just code reorganized for easier understanding. I Turn a lot of functions into Pseudocode for easier reference and understanding**
 
 Here is the link for the official codebase [REACT](https://github.com/facebook/react/tree/master/packages/react-reconciler)
 
@@ -20,8 +22,8 @@ Here is the link for the official codebase [REACT](https://github.com/facebook/r
 - [x] ReactFiber.js > Defining Functions For Creating Fibers
 - [x] ReactCurrentFiber.js > Functions for Describing Fibers
 - [ ] ReactDebugFiberPerf > probably for debugging DEV
-- [ ] ReactChildFiber > The Bulk of The Child Reconciliation
-- [ ] ReactClassComponent.js > Class mounting, class instances....
+- [x] ReactChildFiber > The Bulk of The Child Reconciliation
+- [x] ReactClassComponent.js > Class mounting, class instances....
 - [ ] ReactContext.js > Probably context stuff
 - [ ] ReactFiberHostContext > Host Stuff
 - [ ] ReactFiberHydrationContext.js > Must Understand the Fast and Furious DOM
