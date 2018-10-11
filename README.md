@@ -27,14 +27,14 @@ Here is the link for the official codebase [REACT](https://github.com/facebook/r
 - [ ] ReactContext.js > Probably context stuff
 - [ ] ReactFiberHostContext > Host Stuff
 - [ ] ReactFiberHydrationContext.js > Must Understand the Fast and Furious DOM
-- [ ] ReactFiberPendingPriority.js > Priority, marks levels for various stuff
+- [x] ReactFiberPendingPriority.js > Priority, marks levels for various stuff
 - [x] ReactFiberRoot.js > For creating Fiber Roots
 - [x] ReactFiberExpirationTime.js > How expiration timer is handled
 - [ ] ReactProfilerTimer.js > For Recording/Tracking Time(expiration, commits) for React Profile
 - [ ] ReactFiberTreeReflection.js > Finding Where the host fibers are...nature 
 - [x] ReactFiberStack.js > Concerns how the "stack" is shifted
 - [ ] ReactFiberScheduler > THIS IS SOME GUCCI CODE
-- [ ] ReactUpdateQueue.js > Scheduling The Updates(or I think so)
+- [x] ReactUpdateQueue.js > Scheduling The Updates(or I think so)
 - [ ] ReactFiberBeginWork.js > This is for begining the work
 - [ ] ReactCommitWork.js > Committing Work
 - [ ] ReactCompleteWork.js > CompleteWork
@@ -744,6 +744,99 @@ findNextExpirationTimeToWorkOn(completedExpirationTime, root)
 	root.nextExpirationTimeToWorkOn = nextExpirationTimeToWorkOn;
   	root.expirationTime = expirationTime;
 
+```
+----------------
+
+### How The Update Queue Works
+
+**ReactUpdateQueue**
+
+This is a very interesting file because it creates not one but 2 queues. There is a main function **enqueueUpdate** which is responsible for creating those two queues. It has a very nice system, it checks if queue1 is present based on the Fiber's updateQueue. If the queue1 is null then it creates the queue1. The interesting part is that it creates a clone of the same queue obased on the fiber.alternate updateQueue. There is a function for creating the queue **createUpdateQueue**. There are multiple if within the enqueueUpdate such as if both queues are null then create both and if either is null then create clone of the using cloneUpdateQueue. It gets even more interesting because there is a function called **appendUpdateToQueue** which appends the updates to both queues. During processing of the update queue, there is a inner function which checks if the WIP queue is a Clone.
+
+The UpdateQueue, also exported as a type. Intial values listed
+
+```
+    baseState,
+    firstUpdate: null,
+    lastUpdate: null,
+    firstCapturedUpdate: null,
+    lastCapturedUpdate: null,
+    firstEffect: null,
+    lastEffect: null,
+    firstCapturedEffect: null,
+    lastCapturedEffect: null,
+
+```
+
+The update type 
+
+```
+  expirationTime: ExpirationTime,
+
+// Tags below
+  tag: 0 | 1 | 2 | 3,
+  payload: any,
+  callback: (() => mixed) | null,
+
+  next: Update<State> | null,
+  nextEffect: Update<State> | null,
+
+```
+
+
+The exported constants for reference
+
+```
+
+ UpdateState = 0;
+ ReplaceState = 1;
+ ForceUpdate = 2;
+CaptureUpdate = 3;
+
+
+```
+One of the coolest functions is **getStateFromUpdate**, which works a lot like Redux.
+
+**getStateFromUpdate** 
+
+```
+
+parameters(workInProgress, queue, update, prevState, nextProps, instance)
+	switch case depending on the update.tag
+		ReplaceState 
+			const payload = update.payload
+			if the payload is a 'function' then return a payload.call(instance, prevState, nextProps)
+			return payload
+		CaptureUpdate
+			WIP effectTag
+		UpdateState
+			const payload
+			let partialState
+			if payload is a 'function' the partialState = payload.call as above
+			 else partialState is payload
+			if partialState is null or undefined then return the prevState
+			
+			return Object.assign({}, prevState, partialState)
+			
+	// I wonder if it's possible to put a global state here and natively implement Redux
+		
+		ForceUpdate > hasForceUpdate > return prevState
+	return prevState
+```
+
+**commitUpdateQueue**
+
+```
+parameters(finishedWork, finishedQueue, instance, renderExpirationTime)
+	check is the finishedQueue.firstCapturedUpdate isn't null
+		if finQeue's lastUpdate isn't null then lastUpdate.next is the firstCapturedUpdate 
+			and the lastUpdate is lastCapturedUpdate
+		firstCapturedUpdate > lastCapturedUpdate > null
+	commitUpdateEffects then set 1stEffect > LastEffect > null
+	commitUpdateEffects then set 1stCapturedEffect > lastCapturedEffect > null
+
+commitUpdateEffects(effect, instance) 
+	while callback hell
 ```
 
 ----------------
