@@ -633,15 +633,118 @@ cloneChildFibers(current, workInProgress)
 Even though this function is MASSIVE, all it really does is implement Georgia Bush's NO CHILD LEFT BEHIND POLICY
 
 ----------------
-### Fiber Files that are exported to the React-DOM.js (client side)
 
--All are imported via inline.dom file * as DOMRenderer
+### How Assigning Priority Works
 
--2 Types(flow)(FiberRoot, Batch) from ReactFiberRoot
+ReactFiberPendingPriority.js
 
--React Dom itself is exported from ReactDOMFB.js 
+Most of these functions just if there is work to be done and compare it to expirationTime and Mark different priroity.
+Looks complicated but once you read it a few times, it's quite simple. The abbreviations should help in remebering it cause putting the whole word just confuses the brain for like no reason. 
 
--The rest of DOM files are just various HTML VDOM
+```
+// abbreviations
+
+expirationTime = 		ET
+erroredExpirationTime =		eET		
+earliestPendingTime = 		ePT
+latestPendingTime = 		lPT
+earliestRemainingTime = 	eRT
+earliestSuspendedTime = 	eST
+latestSuspendedTime = 		lST
+pingedTime =			Pi
+latestPingedTime =		lPi
+renderExpirationTime = 		rET
+
+markPendingPriorityLevel(root, expirationTime)
+	// Update the latest and earliest pending times
+	
+	const ePT is root's ePT
+	if NoWork then roots ePT is the ET
+		else if ePT > ET then root's ePT is ET
+			else 
+				const lPT is root's lPT
+				if lPT < ET then root's lPT is ET
+					
+	findNextExpirationTimeToWorkOn(expiration, root)
+
+// This functions main purpose is to findNextExpirationToWorkOn 
+// but if certain conditions on the root are present then markPendingPriorityLevel
+
+markCommittedPriorityLevels(root, earliestRemainingTime)
+	
+	if eRT = NoWork then clear root's ePT, lPT, eST, lST, lPi 
+		and findNextExpirationTimeToWorkOn(NoWork, root)
+
+	const lPT is root's lPT
+	if lPT !== NoWork
+		if lPT < eRT then root's has no work
+		else 
+			const ePT is root's ePT
+			if ePT < eRT then root's ePT = lPT
+
+	
+	const eST is root's eST
+	if eST has NoWork then 
+		markPendingPriorityLevel
+		findNextExpirationTimeToWorkOn
+	
+	const lST is root's lST
+	if eRT > lST then root's eST, lST, lPi = NoWork
+		markPendingPriorityLevel
+		findNextExpirationTimeToWorkOn
+	
+	if eRT < eST 
+		markPendingPriorityLevel
+		findNextExpirationTimeToWorkOn
+
+	
+	findNextExpirationTimeToWorkOn
+
+hasLowerPriorityWork(root, erroredExpirationTime)
+	assigns const lPT, lST, lPI to Root's counterparts 
+		returns a true by checking if any of the above const have NoWork 
+			and any of time are greater then the eET
+	// thus assigning it low priroity value
+
+isPriorityLevelSuspended(root, expirationTime)
+	const eST, lST = root's eST, lST
+	return true if eST != NoWork and ET >= eST and ET <=lST
+
+markSuspendedPriorityLevel(root, suspendedTime)
+	clearPing(root, suspendedTime) //this function checks if the root was pinged during render phase
+	
+	// This is a same function as markCommittedPriorityLevels but with ST and without marking priority levels
+
+	findNextExpirationTimeToWorkOn(suspendedTime, root)
+
+markPingedPriorityLevel(root, pingedTime)
+	const lPi is root's lPi
+	if lPi has NoWork or lPi < pingedTime then root's lPi is Pi
+	findNextExpirationTimeToWorkOn
+
+findEarliestOutstandingPriorityLevel(root, renderExpirationTime)
+	let eET = rET
+	const ePT, eST = root's ePT, eST
+	if NoWork and eST < eET then eET is ePT
+	return earliestExpirationTime;
+
+didExpireAtExpiration(root, currentTime)
+	root's nextExpirationTimeToWorkOn = currenTime
+
+
+findNextExpirationTimeToWorkOn(completedExpirationTime, root)
+	const eST, lST, ePT,lPi = root's counterparts
+
+	// Work on the earliest pending time. Failing that, work on the latest pinged time
+  	
+	if nextExpirationTimeToWorkOn = NoWork then it = lST
+	let ET = nextExpirationTimeToWorkOn
+		if NoWork then Et is eST
+
+	root.nextExpirationTimeToWorkOn = nextExpirationTimeToWorkOn;
+  	root.expirationTime = expirationTime;
+
+```
 
 ----------------
 
