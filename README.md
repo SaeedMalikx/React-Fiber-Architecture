@@ -463,8 +463,172 @@ still need to understand these
 
 **updateClassInstance**
 
+--------------------------
 
+### How Child Fibers Are Reconciled
 
+**ReactChildFiber.js**
+
+There is one main function **ChildReconciler** which does most of the work. There are multiple inner functions that make up this entire function. 
+
+```
+
+parameters(shouldTrackSideEffects)
+	
+	deleteChild(returnFiber, childToDelete)
+		// Deletions are added in reversed order
+		Uses effectTag to determine what child to delete
+		if there is no nextEffect then null otherwise 
+		
+	deleteRemainingChildren(returnFiber, currentFirstChild)
+		using the currentFirstChild, 
+			it uses a while cascades unto next child until all are deleted uding deleteChild
+	
+	mapRemainingChildren(returnFiber, currentFirstChild)
+		// Add the remaining children to a temporary map
+		let existing be the current first
+		while existing is not null 
+			if key present > existingChildren.set(existingChild.key(if no key then index), existingChild)
+			existingChild = sibling
+		return existingChildren	
+	
+	useFiber(fiber, pendingProps, expirationTime)
+		creates a fiber clone using createWorkInProgress and sets the index to 0 and sibling to null
+		
+	placeChild(newFiber, lastPlacedIndex, newIndex)
+		const current = alternate of the new fiber
+		if current !null oldindex is current
+			if < lastPlacedIndex newFiber.effectTag is the new Placement
+			else return oldIndex
+		// This is an insertion.
+      		newFiber.effectTag = Placement;
+      		return lastPlacedIndex;
+				
+	placeSingleChild(newFiber) 
+	
+	updateTextNode(returnFiber, current, textContent, expirationTime)
+		if current null then return a new fiber using 
+			createFiberFromText
+		else update the existing using 
+			useFiber
+	
+	updateElement(returnFiber, current, element, expirationTime)
+		if current !== null and has a type then move it based on index
+			useFiber
+			coerceRef
+			return existing fiber with a updated .ref .return
+		else insert and create a fiber using 
+			createFiberFromElement 
+			coerceRef
+			return the createdFiber
+			
+	updatePortal(returnFiber, current, portal, expirationTime)
+		if null tag != HostPortal(worktag)
+			insert a new createdfiber using createFiberFromPortal and return it
+		else update it using useFiber and return it
+		
+	updateFragment(returnFiber, current, fragment, expirationTime, key)
+		if null no tag != fragment
+			insert createFiberFromFragment and return it
+		else update useFiber
+	
+	createChild(returnFiber, newChild, expirationTime)
+		// Text nodes don't have keys.
+		if typeOf 'string' or 'number' return using createFiberFromText
+		if typeOf 'object and !==null
+			switch depending on newChild.$$typeof
+				REACT_ELEMENT_TYPE > createFiberFromElement > coerceRef > return
+				REACT_PORTAL_TYPE > createFiberFromPortal > coerceRef > return
+				
+			if newChild is an array or has iteration > createFiberFromFragment
+				else error throwOnInvalidObjectType
+		otherwise return null
+	
+	updateSlot(returnFiber, OldFiber, newChild, expirationTime)
+		// Update the fiber if the keys match, otherwise return null and remember text nodes don't have keys
+			
+			if typeof newChild is 'string' or 'number' > return updateTextNode
+				if key !== null > null
+			if typeof newChild is 'object' and !== null
+				switch depending on newChild.$$typeof
+					REACT_ELEMENT_TYPE > updateElement
+						if type is REACT_FRAGMENT_TYPE > return updateFragment
+					REACT_PORTAL_TYPE > if newchild.key matches > updatePortal 	
+				
+				if newChild is an array or has iteration > updateFragment
+			throw if none of the cases throwOnInvalidObjectType
+	
+	// The only difference is the newIdx that was created when mapping new children using mapRemainingChildren
+	updateFromMap(existingChildren, returnFiber, newIdx, newChild, expirationTime)
+		if typeof newChild is 'string' or 'number' > updateTextNode
+		 // const matchedFiber = existingChildren.get(newIdx)
+		
+		if typeof newChild is 'object' and !== null
+			switch depending on newChild.$$typeof
+				REACT_ELEMENT_TYPE > updateElement
+						if type is REACT_FRAGMENT_TYPE > return updateFragment
+				REACT_PORTAL_TYPE > if newchild.key matches > updatePortal
+
+	// Not Sure if this is accurate, FIX LATER
+	reconcileChildrenArray(returnFiber, currentFirstChild, newChildren, expirationTime)
+		using a For Loop this function will go through each children and their children
+			it will compare with created map Idx? and alse keep track using a new Idx 
+				updateSlot and if there is newFiber break the loop
+				placeChild in the correct index
+				
+		if the newIdx = newChildren.length then deleteRemainingChildren
+		if oldFiber is null > createChild > placeChild
+		
+		// Add all children to a key map for quick lookups.
+    		const existingChildren = mapRemainingChildren(returnFiber, oldFiber);
+		
+		use another For Loop and Keep scanning and use the map to restore deleted items as moves.
+		
+		finally return resultingFirstChild
+	
+	reconcileChildrenIterator(returnFiber, currentFirstChild, newChildrenIterable, expirationTime
+		as per comments 
+		// This is the same implementation as reconcileChildrenArray(),
+    		// but using the iterator instead.
+	
+	reconcileSingleTextNode(returnFiber, currentFirstChild, textContent, expirationTime)
+		if currentFirstChild != null and tag matches HostText
+			use deleteRemainingChildren > useFiber > return
+		deleteRemainingChildren
+		createFiberFromText > return it
+	
+	reconcileSingleElement(returnFiber, currentFirstChild, element, expirationTime)
+			while currentFirstChild !== null 
+				deleteRemainingChildren > useFiber > coerceRef else deleteChild
+				return > child.sibling 
+				// repeat until no siblings
+			if element.type is REACT_FRAGMENT_TYPE > return createFiberFromFragment
+			else createFiberFromElement > coerceRef > return
+	
+	reconcileSinglePortal(returnFiber, currentFirstChild, portal, expirationTime)
+		same as above SingleElement but Portals
+	
+	reconcileChildFibers(returnFiber, currentFirstChild, newChild, expirationTime)
+		typeof newChild === 'object' and !== null;
+			REACT_ELEMENT_TYPE > placeSingleChild(reconcileSingleElement)
+			REACT_PORTAL_TYPE > placeSingleChild(reconcileSinglePortal)
+		if typeof newChild is 'string' or 'number' > placeSingleChild(reconcileSingleTextNode)
+		if newChild isArray > reconcileChildrenArray
+		if newChild isiterable > reconcileChildrenIterator
+		
+		
+		deleteReamainingChildren
+	
+	finally it returns reconcileChildFibers
+
+cloneChildFibers(current, workInProgress)
+	creates a newchild by using createWorkInProgress(currentChild, currentChild.pendingProps, currentChild.expirationTime)
+	workInProgress.child = newChild
+	
+	Run a while loop on the children and go to next chid, clone it until none
+	
+```
+Even though this function is MASSIVE, all it really does is implement Georgia Bush's NO CHILD LEFT BEHIND POLICY
 
 ----------------
 ### Fiber Files that are exported to the React-DOM.js (client side)
