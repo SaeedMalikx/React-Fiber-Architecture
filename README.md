@@ -23,25 +23,46 @@ Here is the link for the official codebase [REACT](https://github.com/facebook/r
 - [x] ReactCurrentFiber.js > Functions for Describing Fibers
 - [ ] ReactDebugFiberPerf > probably for debugging DEV
 - [x] ReactChildFiber > The Bulk of The Child Reconciliation
-- [x] ReactClassComponent.js > Class mounting, class instances....
-- [ ] ReactContext.js > Probably context stuff
-- [ ] ReactFiberHostContext > Host Stuff
+- [x] ReactClassComponent.js > Class mounting, class instances, class reconciliation
+- [x] ReactContext.js > Probably context stuff
+- [x] ReactFiberHostContext > Host Stuff
 - [ ] ReactFiberHydrationContext.js > Must Understand the Fast and Furious DOM
 - [x] ReactFiberPendingPriority.js > Priority, marks levels for various stuff
 - [x] ReactFiberRoot.js > For creating Fiber Roots
-- [x] ReactFiberExpirationTime.js > How expiration timer is handled
-- [ ] ReactProfilerTimer.js > For Recording/Tracking Time(expiration, commits) for React Profile
+- [x] ReactFiberExpirationTime.js > How expiration time is handled
+- [ ] ReactProfilerTimer.js > For Recording/Tracking Time React Profiler
 - [ ] ReactFiberTreeReflection.js > Finding Where the host fibers are...nature 
 - [x] ReactFiberStack.js > Concerns how the "stack" is shifted
 - [ ] ReactFiberScheduler > THIS IS SOME GUCCI CODE
 - [x] ReactUpdateQueue.js > Scheduling The Updates(or I think so)
 - [ ] ReactFiberBeginWork.js > This is for begining the work
-- [ ] ReactCommitWork.js > Committing Work
 - [ ] ReactCompleteWork.js > CompleteWork
-- [ ] ReactUnwindWork.js > Gotta unwind the work once its completed
-- [ ] ReactFiberReconciler.js >  The Main File
+- [ ] ReactUnwindWork.js > Unwind
+- [ ] ReactCommitWork.js > Committing Work
+- [x] ReactFiberReconciler.js >  The Main File
 - [ ] REACT-DOM.JS > Where the above files end making sense
 - [ ] Scheduler.js > located in a different package > concerns RequestAnimationFrame
+
+-----------------
+
+### Note on Algorithms Used
+
+I thought there would be many complicated algorithms used since it took 2+ years to build. 
+These Are All the ones I noticed and are quite simple
+
+```
+
+SinglyLinked Lists
+Simple Stacks (push) (pop) are used based on a index/cursor.
+The algorithms used for reconciling children are equivalent of going through a JSON file. 
+Simply mapping it out, maybe run some while loops on the childrens until all are reconciled. 
+Building a clone  then see what changed and perform replacements.
+Navigating through the stack in reverse or forward direction
+
+```
+
+----------------
+
 
 ## What Is A Fiber and How Are They Created?
 
@@ -839,7 +860,173 @@ commitUpdateEffects(effect, instance)
 	while callback hell
 ```
 
-----------------
+
+-----------------------
+
+### How Context Is Handled
+
+**ReactFiberContext.js**
+
+Most of these functions from the looks of it just seem to be concerned with getting the context from the Fibers. 
+
+There seems to be a general pattern emerging. 
+Which is get something from a stack, store/cache, reconcile and then put it back in the stack. 
+
+So there is a function for getting the context from the current WIP fiber and acting on it. 
+
+**getUnmaskedContext** and **getMaskedContext** return the context.
+
+**cacheContext** is reponsible for storing the context and assigning it to the WIP.stateNode
+
+**hasContextChanged** returns a boolean and checks if work was performed while it's in the Stack
+
+The following 4 functions manage the Push Pop actions on the stackCursor
+
+```
+
+popContext
+popTopLevelContextObject
+pushTopLevelContextObject > double push to contextStack and didWIP
+pushContextProvider > double push using previousContext
+
+```
+
+**processChildContext**
+
+```
+
+parameters(fiber, type, parentContext)
+	const instance = fiber.stateNode;
+  	const childContextTypes = type.childContextTypes;
+	let childContext
+	get the instance of the child context using the stop/start PhaseTimers
+	return {...parentContext, ...childContext};
+```
+
+There is a function **invalidateContextProvider** that checks if change occured, then processChildContext and perform a the replacement on the stack using pop > pop and then push > push. If no change then a simple pop push.
+
+**findCurrentUnmaskedContext**
+
+```
+
+parameters(fiber)
+	// assigns a node variable and checks the tag
+	// lazy component uses getResultFromResolvedThenable comes from shared file ReactLazyComponent
+	do 
+		switch depending on tag
+			HostRoot > return stateNode.context
+			ClassComponent > using isContextProvider > return MemoizedMergedChildContext
+			ClassComponentLazy > same as ClassComponent but Lazy
+		
+
+```
+
+Pretty much this files is much like other files and it performs a switch with WIP fibers in the stack and change/replace them as needed. 
+
+**ReactFiberHostContext.js**
+
+
+This files is very similar but the main difference I'm seeing is that it creates a container for the Host root. 
+
+Note: Saw this in Reconciler.js
+
+```
+
+Initiliaze the cursors for the Stack
+
+requiredContext(c, Value)
+	return c
+
+getRootHostContainer > gets the requiredContext for the rootInstance
+
+pushHostContainer(fiber, nextRootInstance)
+	// Push current root instance onto the stack;
+	 push rootCursor, > push contextCursor > push NO_CONTEXT
+	get HostContext > pop context > push nextRootContext
+
+popHostContainer > pop cursors x 3
+
+getHostContext > using requiredContext get current cursor context
+
+pushHostContext(fiber) > double push on to the stack, the current and next
+
+// Do not pop unless this Fiber provided the current context.
+// pushHostContext() only pushes Fibers that provide unique contexts.
+
+popHostContext(fiber) > double pop on the stack and fiber
+
+```
+------------
+BeginWork
+------------
+CompleteWork
+------------
+UnwindWork
+------------
+CommitWork
+------------
+
+
+**ReactFiberReconciler.js**
+
+This file is in charge of creating the container, and scheduling the whole Fiber Update process. 
+
+```
+
+// 0 is PROD, 1 is DEV For BundleType
+
+getContextForSubtree(parentComponent)
+	if null then return emptyContextObject
+
+	Get the map of the fiber instance, and findCurrentUnmaskedContext(fiber)
+	if the fibers tag is ClassComponent then processChildContext, if it's lazy do the whole thenable and process context
+
+	return parentContext
+
+scheduleRootUpdate(current, element, expirationTime, callback)
+	create > enqueue > scheduleWork > return expirationTime
+	
+
+updateContainerAtExpirationTime(element, container, parentComponent, expirationTime, callback)
+	get the current container, and contextForSubTree
+	if context is null then return context else set it to pending
+	return schedule RootUpdate
+
+findHostInstance(component)
+	get the hostFiber using findCurrentHostFiber and return it's stateNode
+
+createContainer(containerInfo, isConcurrent, hydrate) > return the created Fiber Root
+
+updateContainer(element, container, parentComponent, callback)
+	on the current container > computeExpirationForFiber and return updateContainerAtExpirationTime
+
+getPublicRootInstance(container)
+	get the current container and depending on it's HostComponent get it's public Instance, which is the child.stateNode
+
+
+```
+
+OH it's creating a container for the current component/whatever(get Fibers and all for the root)
+
+
+and then scheduling an update at Root, 
+
+at this stage setState should trigger, which ends up scheduling the work assigning expirationTimes. 
+
+Scheduling The Work will start the process of 
+
+```
+Begin > CompleteWork > UnWind > Commit
+
+Where it does work such as Reconciling Child Fibers, context, and etc. 
+
+```
+
+Update the component/whatever, rinse and repeat
+
+
+
+---------------
 
 **Scheduler.js**
 
@@ -847,21 +1034,5 @@ Holy crap it's using requestAnimationFrame
 
 ----------------
 ## REACT-DOM AND HOW IT WORKS
-
-Rough Understanding of how this all works based on Baking Fiber COOKIES
-
-Straight up preparing a batch of chocolate chip cookies and peanut butter chip cookies. 
-
-Putting it in the oven 
-
-Modifying the chocolate chips cause setState has decided the chips are not good enough but it also doesn't like the peanut butter cookies. 
-
-Ok lets update the chocolate chips cause everyone will see them first cause chocolate chips cookies are high priority and since we put the peanut butter cookies all the way in the back since they suck at Dota and always stuck in low priority, we can change the peanut butter chips right before everyone notices them. 
-
-Commit the chips change and
-
-turns out we used the wrong tray(class components) so now somehow the cookies are floating in magic air and tray needs to be changed.
-
-TING............Delicious Cookies
 
 
