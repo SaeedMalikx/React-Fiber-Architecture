@@ -35,9 +35,9 @@ Here is the link for the official codebase [REACT](https://github.com/facebook/r
 - [x] ReactFiberStack.js > Concerns how the "stack" is shifted
 - [ ] ReactFiberScheduler > THIS IS SOME GUCCI CODE
 - [x] ReactUpdateQueue.js > Scheduling The Updates(or I think so)
-- [ ] ReactFiberBeginWork.js > This is for begining the work
-- [ ] ReactCompleteWork.js > CompleteWork
-- [ ] ReactUnwindWork.js > Unwind
+- [x] ReactFiberBeginWork.js > This is for begining the work
+- [x] ReactCompleteWork.js > CompleteWork
+- [x] ReactUnwindWork.js > Unwind
 - [ ] ReactCommitWork.js > Committing Work
 - [x] ReactFiberReconciler.js >  The Main File
 - [ ] REACT-DOM.JS > Where the above files end making sense
@@ -60,6 +60,7 @@ Building a clone  then see what changed and perform replacements.
 Navigating through the stack in reverse or forward direction
 
 ```
+
 
 ----------------
 
@@ -956,12 +957,167 @@ pushHostContext(fiber) > double push on to the stack, the current and next
 popHostContext(fiber) > double pop on the stack and fiber
 
 ```
-------------
-BeginWork
-------------
-CompleteWork
-------------
-UnwindWork
+-----------
+### How The Work is Handled.
+
+**READ BELOW ONLY IF YOU HAVE READ THE ABOVE, as these work files will easily make sense if the inner parts are understood.**
+
+This file mostly as stated by the name begins the work on various parts. 
+
+```
+
+reconcileChildren(current, workInProgress, nextChildren, renderExpirationTime)
+	if there is no work being done on the current 
+		mountChildFibers(workInProgress, null, nextChildren, renderExpirationTime)
+	else reconcileChildFibers
+
+forceUnmountCurrentAndReconcile(current, workInProgress, nextChildren, renderExpirationTime)
+	on the workInProgress.child run reconcileChildFiber x2
+
+updateForwardRef(current, workInProgress, type, nextProps, renderExpirationTime)
+	if it doesn't have a hasLegacyContextChanged and memoizedProps=nextProps 
+		if ref = current then bailOut
+
+	reconcileChildren
+	memoizProps and return the WIP.child
+
+updatePureComponent(current, workInProgress, Component, nextProps, updateExpirationTime, renderExpirationTime)
+	 an if bailoutconditions
+	
+	prepareToReadContext > reconcileChildren > memoizProps > return WIP.child
+
+updateFragment(current, workInProgress, renderExpirationTime)
+	same as pure but remember that fragments and the lack of context
+
+updateMode(current, workInProgress, renderExpirationTime)
+	same but for pendingProps.Children
+
+updateFunctionComponent(current, workInProgress, Component, nextProps, renderExpirationTime)
+	same as but getUnmaskedContext and getMaskedContext before reconciling
+
+updateClassComponent(current, workInProgress, Component, nextProps, renderExpirationTime)
+	
+	prepareToreadContext
+	if the current WIP.stateNode is null(not being worked on)
+		then constructClassInstance and mountClassInstance
+		else resumeMountClassInstance
+	else updateClassInstance since it's already being worked on
+	
+	return finishClassComponent
+
+finishClassComponent(current, workInProgress, Component, shouldUpdate, hasContext, renderExpirationTime)
+	markRef for the current WIP
+	an if bail condition
+	
+	let nextChildren be null if there is no nextChildren, otherwise render the nextChild
+
+	if the current isn't null then forceUnmountCurrentandReconcile otherwise reconcileChildren
+
+	memoizeState and Props > return WIP.child
+
+pushHostRootContext(workInProgress)
+	if it has a pendingContext then pushTopLevelContextObject with a true value, otherwise if the root has only context then set it to false
+	pushHostContainer
+
+updateHostRoot(current, workInProgress, renderExpirationTime)
+	pushHostRootContext
+	assign variables to WIP.props/state and processUpdateQueue
+	if nextChildren = prevChildren then restHydrationState and bail out
+	otherwise hydrate it > mountChildFibers
+	and ofcourse reconcileChildren > return WIP.child
+
+updateHostComponent(current, workInProgress, renderExpirationTime)
+	pushHostContext 
+	assign WIP.type/pendingProps/memoizedProps
+	markRef > Deprioritize the subtree if needed > reconcile > memoizeProps > return WIP.child
+
+updateHostText > just updater for above host functions
+
+resolveDefaultProps(Component, baseProps)
+	using object.assign and a for let in loop resolve the props taken from ReactElement
+	return baseProps
+
+mountIndeterminateComponent(current, workInProgress, Component, updateExpirationTime, renderExpirationTime)
+	const props = workInProgress.pendingProps
+	if it's 'object' and !==null, and 'function'
+		cancelWorkTimer > readLazyComponentType > startWorkTimer
+	switch (resolvedTag) 
+		FunctionComponentLazy > updateFunctionComponent
+		ClassComponentLazy > updateClassComponent
+		ForwardRefLazy > updateForwardRef
+		PureComponentlazy > updatePureComponent
+	return WIP.props > child
+
+	assign variables and get unmasked and masked contexts > prepareToReadContext
+	if value is an 'object' and !null and value.render(function and undefined)
+		then get DerivedStateFromProps > applyDerivedStateFromProps if needed 
+		adoptClassInstance > mountClassInstance > return finishClassComponent
+	otherwise reconcile > memoizProps > return WIP.child
+
+updateSuspenseComponent(current, workInProgress, renderExpirationTime)
+	check if it's currently being worked on the component has timed out 
+	if it's being worked on the forceUnmountCurrentAndReconcile else reconcileChildren
+	WIP.memoized Props/State to the nextProps and DidTimeout > return WIP.child
+		
+updatePortalComponent(current, workInProgress, renderExpirationTime)
+	pushHostContainer
+	if it isn't being worked then assign and reconcileChildFibers, else is same and > memoize > return
+
+updateContextProvider
+	same as above function but newProps/oldProps = memoized
+	pushProvider(workInProgress, newValue)
+
+	if oldProps are present, bail out otherwise > propagateContextChange
+	reconcile
+
+updateContextConsumer
+	prepareToReadContext > assign new values > reconcile > return WIP.child
+
+// beginWork just uses the above function depending on the WIP.tag 
+// Keep the expiration Time in mind as well	
+// remember that purecomponents/lazy components have thenable functions, and just follows the same methods for pretty much all the cases.
+
+```
+	
+	
+### Complete Work
+
+This file literally just completes what was started by BeginWork. The beginwork sets the pieces in motion and then CompleteWork acts on the pieces. 
+
+**markUpdate** and **markRef** just tag the fibers. 
+
+**appendAllChildren** runs a while loop on the childrens until all the siblings are accounted for. There is an inner function called **appendInitialChild** which sets the loop in motion. 
+
+```
+
+if the work is mutable then 
+	updateHostContainer 
+	updateHostComponent > get the context > prepare the update > if it has a payload > markUpdate
+	updateHostText > markUpdate
+elif persists 
+	appendAllChildrenToContainer(containerChildSet, workInProgress) > run a while loop on child and siblings
+	updateHostContainer > create the container > append > mark > finalizeContainerChildren with the newChildSet
+	updateHostComponent > switch old props with memoized and create a new instance > get the host context > prepareUpdate > clone > finalizeInitialChildren > markUpdate	
+	updateHostText > if old !== newText then get host container, context > create an instance > markUpdate
+else literally do nothing
+
+// The Main Function
+
+completeWork(current, workInProgress, renderExpirationTime)
+	switch depending on Tag
+		all the functions are same for the Work Tags with little variation
+		pop From Container
+		Update The Container 
+
+// Remember not all functions have these container...pure/fragments
+
+```
+
+There is no need to go over the entire **ReactFiberUnwindWork** when all it's doing is just setting the values(container/whatever was acted upon in beginwork) to null by popping them from where they were put in and gets ready for the next rinse and repeat
+There is also functions for throwing error for various conditions based on the catch error boundary which is part of the new api in React
+I will explain this in detail when I get the chance but if you have made it this far then you should automatically know what should happen here.
+
+
 ------------
 CommitWork
 ------------
@@ -1006,7 +1162,7 @@ getPublicRootInstance(container)
 
 ```
 
-OH it's creating a container for the current component/whatever(get Fibers and all for the root)
+it's creating a container for the current component/whatever(get Fibers and all for the root)
 
 
 and then scheduling an update at Root, 
@@ -1030,9 +1186,15 @@ Update the component/whatever, rinse and repeat
 
 **Scheduler.js**
 
-Holy crap it's using requestAnimationFrame
+using requestAnimationFrame
 
 ----------------
 ## REACT-DOM AND HOW IT WORKS
+
+---------------------
+
+### Something You May Have Realized. If You Actually Went Through The Files..... 
+
+
 
 
