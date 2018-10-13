@@ -1186,7 +1186,9 @@ Update the component/whatever, rinse and repeat
 
 **Scheduler.js**
 
-using requestAnimationFrame
+Check Out This Repo
+
+https://github.com/spanicker/main-thread-scheduling
 
 ----------------
 ## REACT-DOM AND HOW IT WORKS
