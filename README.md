@@ -660,8 +660,8 @@ Even though this function is MASSIVE, all it really does is implement Georgia Bu
 
 ReactFiberPendingPriority.js
 
-Most of these functions just if there is work to be done and compare it to expirationTime and Mark different priroity.
-Looks complicated but once you read it a few times, it's quite simple. The abbreviations should help in remebering it cause putting the whole word just confuses the brain for like no reason. 
+Most of these functions just if there is work to be done and compare it to expirationTime and Mark different priority.
+Looks complicated but once you read it a few times, it's quite simple. The abbreviations should help in remembering it cause putting the whole word just confuses the brain for like no reason. 
 
 ```
 // abbreviations
@@ -904,7 +904,7 @@ parameters(fiber, type, parentContext)
 	return {...parentContext, ...childContext};
 ```
 
-There is a function **invalidateContextProvider** that checks if change occured, then processChildContext and perform a the replacement on the stack using pop > pop and then push > push. If no change then a simple pop push.
+There is a function **invalidateContextProvider** that checks if change occurred, then processChildContext and perform a the replacement on the stack using pop > pop and then push > push. If no change then a simple pop push.
 
 **findCurrentUnmaskedContext**
 
