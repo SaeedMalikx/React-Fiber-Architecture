@@ -2,7 +2,7 @@
 
 Just another one of my **Self-Study Projects** . I don't tend to make such projects public but this might be of help for someone looking to understand Fiber and React Under the hood. Do remember as of writing this, this is my first time looking at the code for Fiber.
 
-Often times reading a large amount of code can be very intimidating for someone new to programming. So it's best to read each line and document them if needed so you don't go hoping around files searching for that lost variable or get lost on the Import tags. There is no set rules or anything here, just documenting/laying it out the best I can. Any part of this doc might change as my understanding of the whole system grows. 
+Often times reading a large amount of code can be very intimidating for someone new to programming, so it's best to read each line and document them if needed so you don't go hopping around files searching for that lost variable or get lost on the Import tags. There is no set rules or anything here, just documenting/laying it out the best I can. Any part of this doc might change as my understanding of the whole system grows. 
 
 In order to properly use this, clone it and uncheck all the files and then go through the files one by one and adjust the pseudocode to your liking. Remember it took them 2+ years to make Fiber so be patient as it might take you a while. 
 
@@ -69,7 +69,7 @@ Navigating through the stack in reverse or forward direction
 
 > A Fiber is work on a Component that needs to be done or was done. There can be more than one per component.
 
-It is essentially an object with set properties used to identify what kind of a (component) it is and what works needs to be done. Assign prioirity levels for efficient processing. since it uses flow, it is also exported as a type. 
+It is essentially an object with set properties used to identify what kind of a (component) it is and what works needs to be done. Assign prioirity levels for efficient processing. Since it uses flow, it is also exported as a type. 
 
 Most/if not all is in: **ReactFiber.js**
 
