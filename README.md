@@ -364,16 +364,16 @@ push(cursor, value, fiber)
 
 **ReactFiberClassComponent.js**
 
-this is incharge of handling how the react components are updated:
+This is in charge of handling how the react components are updated:
 
-the outer function incharge of sending props to the internal state is **applyDerivedStateFromProps**. Which handles
-Merging  of the partial state and the previous state. Where memoized state is compared with the previous and using methods like Redux object.assign. 
+The outer function in charge of sending props to the internal state is **applyDerivedStateFromProps**. This handles
+merging  of the partial state and the previous state. Where memoized state is compared with the previous and using methods like Redux object.assign. 
 It assigns a new state. There is a if case present that if it's not in a updatequeue then basestate(initial state) = memiozed state. 
 
 
 The structure of this is a lot like using Redux(payloads, assigning)
 
-There is a main classComponentUpdater which is contains various functions:
+There is a main classComponentUpdater which contains various functions:
 
 ```
 
