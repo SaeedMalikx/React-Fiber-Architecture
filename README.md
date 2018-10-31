@@ -661,7 +661,7 @@ Even though this function is MASSIVE, all it really does is implement Georgia Bu
 ReactFiberPendingPriority.js
 
 Most of these functions just if there is work to be done and compare it to expirationTime and Mark different priroity.
-Looks complicated but once you read it a few times, it's quite simple. The abbreviations should help in remebering it cause putting the whole word just confuses the brain for like no reason. 
+Looks complicated but once you read it a few times, it's quite simple. The abbreviations should help in remembering it because putting the whole word just confuses the brain for like no reason. 
 
 ```
 // abbreviations
@@ -773,7 +773,7 @@ findNextExpirationTimeToWorkOn(completedExpirationTime, root)
 
 **ReactUpdateQueue**
 
-This is a very interesting file because it creates not one but 2 queues. There is a main function **enqueueUpdate** which is responsible for creating those two queues. It has a very nice system, it checks if queue1 is present based on the Fiber's updateQueue. If the queue1 is null then it creates the queue1. The interesting part is that it creates a clone of the same queue obased on the fiber.alternate updateQueue. There is a function for creating the queue **createUpdateQueue**. There are multiple if within the enqueueUpdate such as if both queues are null then create both and if either is null then create clone of the using cloneUpdateQueue. It gets even more interesting because there is a function called **appendUpdateToQueue** which appends the updates to both queues. During processing of the update queue, there is a inner function which checks if the WIP queue is a Clone.
+This is a very interesting file because it creates not one but 2 queues. There is a main function **enqueueUpdate** which is responsible for creating those two queues. It has a very nice system, it checks if queue1 is present based on the Fiber's updateQueue. If the queue1 is null then it creates the queue1. The interesting part is that it creates a clone of the same queue obased on the fiber.alternate updateQueue. There is a function for creating the queue **createUpdateQueue**. There are multiple if within the enqueueUpdate such as if both queues are null then create both and if either is null then create clone of the using cloneUpdateQueue. It gets even more interesting because there is a function called **appendUpdateToQueue** which appends the updates to both queues. During processing of the update queue, there is an inner function which checks if the WIP queue is a Clone.
 
 The UpdateQueue, also exported as a type. Intial values listed
 
