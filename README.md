@@ -155,7 +155,7 @@ making a work in progress fiber
 the rest of work in progress fiber
 ```
 
-Function(exported) **createFiberFromElement**. Hmm look this is incharge of creating all the fibers based on the React element type. 
+Function(exported) **createFiberFromElement**. Hmm look this is in charge of creating all of the fibers based on the React element type. 
 ```
 parameters(element, mode, expirationTime)
 
